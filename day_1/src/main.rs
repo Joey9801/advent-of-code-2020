@@ -9,12 +9,15 @@ fn main() -> Result<(), io::Error> {
         .map(|l| l.trim().parse().expect(&format!("{} wasn't a valid u64", l)))
         .collect::<Vec<u64>>();
     
-    for i in 0..(numbers.len() - 1) {
-        for j in (i+1)..numbers.len() {
-            let x = numbers[i];
-            let y = numbers[j];
-            if x + y == 2020 {
-                println!("{} + {} = 2020, {} * {} = {}", x, y, x, y, x * y);
+    for i in 0..(numbers.len() - 2) {
+        for j in (i+1)..(numbers.len() - 1) {
+            for k in (j+1)..numbers.len() {
+                let x = numbers[i];
+                let y = numbers[j];
+                let z = numbers[k];
+                if x + y + z == 2020 {
+                    println!("{} + {} + {} = 2020, {} * {} * {} = {}", x, y, z, x, y, z, x * y * z);
+                }
             }
         }
     }
