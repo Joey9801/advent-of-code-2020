@@ -1,35 +1,31 @@
 const INPUT: &str = include_str!("../input.txt");
 
-fn is_valid_1(line: &str) -> bool {
+fn parse_line(line: &str) -> (u32, u32, char, &str) {
     debug_assert!(line.is_ascii());
     let dash = line.find('-').unwrap();
     let space = line.find(' ').unwrap();
     let colon = line.find(':').unwrap();
     
-    let min: usize = line[0..dash].parse().unwrap();
-    let max: usize = line[(dash + 1)..space].parse().unwrap();
+    let a = line[0..dash].parse().unwrap();
+    let b = line[(dash + 1)..space].parse().unwrap();
     let letter = line[(space+1)..(space+2)].chars().next().unwrap();
     let password = &line[(colon + 2)..];
     
+    (a, b, letter, password)
+}
+
+fn is_valid_1(line: &str) -> bool {
+    let (min, max, letter, password) = parse_line(line);
     let count = password.chars()
         .filter(|c| *c == letter)
         .count();
 
-    (min..(max + 1)).contains(&count)
+    (min..(max + 1)).contains(&(count as u32))
 }
 
 fn is_valid_2(line: &str) -> bool {
-    debug_assert!(line.is_ascii());
-    let dash = line.find('-').unwrap();
-    let space = line.find(' ').unwrap();
-    let colon = line.find(':').unwrap();
-    
-    let idx_1: usize = line[0..dash].parse().unwrap();
-    let idx_2: usize = line[(dash + 1)..space].parse().unwrap();
-    let letter = line[(space+1)..(space+2)].chars().next().unwrap();
-    let password = &line[(colon + 2)..];
-    
-    let get_char = |idx| password.chars().skip(idx - 1).next();
+    let (idx_1, idx_2, letter, password) = parse_line(line);
+    let get_char = |idx| password.chars().skip(idx as usize - 1).next();
     (get_char(idx_1) == Some(letter)) ^ (get_char(idx_2) == Some(letter))
 }
 
