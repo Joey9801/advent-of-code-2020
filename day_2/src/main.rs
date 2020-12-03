@@ -30,12 +30,17 @@ fn is_valid_2(line: &str) -> bool {
 }
 
 fn main() {
-    let valid_count = INPUT
+    let valid_count_1 = INPUT
+        .lines()
+        .filter(|l| is_valid_1(*l))
+        .count();
+    let valid_count_2 = INPUT
         .lines()
         .filter(|l| is_valid_2(*l))
         .count();
 
-    println!("There are {} valid passwords", valid_count);
+    println!("By rule 1, there are {} valid passwords", valid_count_1);
+    println!("By rule 2, there are {} valid passwords", valid_count_2);
 }
 
 #[cfg(test)]
