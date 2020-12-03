@@ -44,11 +44,12 @@ impl Map {
     
     fn get_cell(&self, x: usize, y: usize) -> Cell {
         let x = x % self.width;
-        
         self.data[y * self.width + x]
     }
     
     fn count_trees(&self, step_x: usize, step_y: usize) -> usize {
+        assert!(step_y > 0);
+
         (0..self.height)
             .step_by(step_y)
             .enumerate()
@@ -60,5 +61,47 @@ impl Map {
 
 fn main() {
     let map = Map::from_input(INPUT);
+    let slopes: [(usize, usize); 5] = [
+        (1, 1),
+        (3, 1),
+        (5, 1),
+        (7, 1),
+        (1, 2)
+    ];
+    
+    let product: usize = slopes.iter()
+        .map(|(step_x, step_y)| map.count_trees(*step_x, *step_y))
+        .product();
+
     println!("There were {} trees on the 3/1 slope", map.count_trees(3, 1));
+    println!("Product of tree counts: {}", product);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    #[test]
+    fn test_part_1() {
+        let map = Map::from_input(INPUT);
+        assert_eq!(map.count_trees(3, 1), 228);
+    }
+    
+    #[test]
+    fn test_part_2() {
+        let slopes: [(usize, usize); 5] = [
+            (1, 1),
+            (3, 1),
+            (5, 1),
+            (7, 1),
+            (1, 2)
+        ];
+        
+        let map = Map::from_input(INPUT);
+        let product: usize = slopes.iter()
+            .map(|(step_x, step_y)| map.count_trees(*step_x, *step_y))
+            .product();
+        
+        assert_eq!(product, 6818112000);
+    }
 }
