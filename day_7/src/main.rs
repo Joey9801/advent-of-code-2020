@@ -117,18 +117,25 @@ fn part_1(graph: &Graph) -> u32 {
 }
 
 fn part_2(graph: &Graph) -> u32 {
-    // Life is too short to implement toposort for this problem
-    fn recursive_value(graph: &Graph, id: &str) -> u32 {
-        graph.nodes.get(id)
-            .map(|node| node
-                .edges
-                .iter()
-                .map(|(&id, value)| *value * (1 + recursive_value(graph, id)))
-                .sum()
-            ).unwrap_or(0)
+    // Memoized recursive method
+    fn recursive_value<'a, 'b>(cache: &'a mut HashMap<&'b str, u32>, graph: &'b Graph, id: &'b str) -> u32 {
+        if let Some(cached) = cache.get(id) {
+            *cached
+        } else {
+            let value = graph.nodes.get(id)
+                .map(|node| node
+                    .edges
+                    .iter()
+                    .map(|(&id, value)| *value * (1 + recursive_value(cache, graph, id)))
+                    .sum()
+                ).unwrap_or(0);
+            
+            cache.insert(id, value);
+            value
+        }
     }
 
-    recursive_value(graph, "shiny gold")
+    recursive_value(&mut HashMap::new(), graph, "shiny gold")
 }
 
 fn main() {
