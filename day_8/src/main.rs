@@ -1,5 +1,4 @@
-use std::{iter, num::ParseIntError, str::FromStr};
-use util::math::add;
+use std::{cmp::Ordering, num::ParseIntError, str::FromStr};
 
 const INPUT: &str = include_str!("../input.txt");
 
@@ -28,21 +27,15 @@ impl FromStr for Instruction {
     type Err = InstructionParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut tokens = s.split_ascii_whitespace();
-
-        let op_str = tokens.next().ok_or(InstructionParseError::MissingOp)?;
-
-        let arg_str = tokens
-            .next()
-            .ok_or(InstructionParseError::MissingArgument)?;
-        let arg_str = arg_str.strip_prefix('+').unwrap_or(arg_str);
-
-        Ok(match op_str {
-            "jmp" => Instruction::Jmp(arg_str.parse()?),
-            "acc" => Instruction::Acc(arg_str.parse()?),
-            "nop" => Instruction::Nop(arg_str.parse()?),
-            other => Err(InstructionParseError::UnrecognizedOp(other.to_string()))?,
-        })
+        let mut tokens = s.splitn(2, ' ');
+        match (tokens.next(), tokens.next()) {
+            (None, _) | (Some(""), _) => Err(InstructionParseError::MissingOp)?,
+            (Some(_), None) => Err(InstructionParseError::MissingArgument)?,
+            (Some("jmp"), Some(arg)) => Ok(Instruction::Jmp(arg.parse()?)),
+            (Some("acc"), Some(arg)) => Ok(Instruction::Acc(arg.parse()?)),
+            (Some("nop"), Some(arg)) => Ok(Instruction::Nop(arg.parse()?)),
+            (Some(other), _) => Err(InstructionParseError::UnrecognizedOp(other.to_string()))?
+        }
     }
 }
 
@@ -55,7 +48,7 @@ struct Vm {
 
 impl Vm {
     fn new(instructions: Vec<Instruction>) -> Self {
-        let visited_instructions = iter::repeat(false).take(instructions.len()).collect();
+        let visited_instructions = vec![false; instructions.len()];
 
         Self {
             instructions,
@@ -76,16 +69,20 @@ impl Vm {
     fn step(&mut self) {
         match self.instructions.get(self.program_counter as usize) {
             Some(instr) => {
-                self.visited_instructions[self.program_counter] = true;
-                match instr {
-                    Instruction::Jmp(x) => self.program_counter = add(self.program_counter, *x),
-                    Instruction::Acc(x) => self.accumulator += x,
-                    Instruction::Nop(_) => (),
-                }
-
-                match instr {
-                    Instruction::Jmp(_) => (),
-                    _ => self.program_counter += 1,
+                self.visited_instructions[self.program_counter as usize] = true;
+                match *instr {
+                    Instruction::Jmp(x) => {
+                        if x.is_negative() {
+                            self.program_counter -= x.abs() as usize;
+                        } else {
+                            self.program_counter += x as usize;
+                        }
+                    },
+                    Instruction::Acc(x) => {
+                        self.accumulator += x;
+                        self.program_counter += 1;
+                    }
+                    Instruction::Nop(_) => self.program_counter += 1,
                 }
             }
             None => (),
@@ -106,13 +103,10 @@ fn test_vm(vm: &mut Vm) -> VmTestResult {
         vm.step();
     }
 
-    match vm.program_counter {
-        x if x < vm.instructions.len() => VmTestResult::InfiniteLoop(vm.accumulator),
-        x if x == vm.instructions.len() => VmTestResult::RegularTermination(vm.accumulator),
-        x if x > vm.instructions.len() => VmTestResult::IrregularTermination,
-
-        // Why does rustc demand this?
-        _ => unreachable!(),
+    match vm.program_counter.cmp(&vm.instructions.len()) {
+        Ordering::Less => VmTestResult::InfiniteLoop(vm.accumulator),
+        Ordering::Equal => VmTestResult::RegularTermination(vm.accumulator),
+        Ordering::Greater => VmTestResult::IrregularTermination,
     }
 }
 
@@ -126,6 +120,10 @@ fn fix_corruption(vm: &mut Vm) -> Option<i32> {
     }
 
     for trial in 0..vm.instructions.len() {
+        if let Instruction::Nop(_) = vm.instructions[trial] {
+            continue;
+        }
+
         swap_instr(&mut vm.instructions[trial]);
 
         match test_vm(vm) {
