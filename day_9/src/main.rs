@@ -1,13 +1,16 @@
-// Super dumb N^3 brute force solution - The input is small enough to fit in ~10% of the L1 cache of a single core on my machine
-fn part_1(numbers: &[usize], window: usize) -> Option<usize> {
-    fn contains_sum(numbers: &[usize], target: usize) -> bool {
-        for x in 0..(numbers.len() - 1) {
-            for y in (x + 1)..numbers.len() {
-                let x= numbers[x];
-                let y= numbers[y];
-                if x != y && x + y == target {
-                    return true;
-                }
+use std::time::Instant;
+
+// O(|numbers| * window_size ^ 2) solution
+fn part_1(numbers: &[i64], window: usize) -> Option<i64> {
+    
+    // Does the given slice contain a pair of different numbers equal to the target
+    fn contains_pair_sum(slice: &[i64], target: i64) -> bool {
+        for x in 0..(slice.len() - 1) {
+            if slice[x] * 2 == target {
+                continue;
+            }
+            if slice[x..].contains(&(target - slice[x])) {
+                return true;
             }
         }
         false
@@ -15,12 +18,12 @@ fn part_1(numbers: &[usize], window: usize) -> Option<usize> {
 
     numbers.windows(window)
         .zip(numbers.iter().skip(window))
-        .filter(|(window, target)| !contains_sum(window, **target))
+        .filter(|(window, target)| !contains_pair_sum(window, **target))
         .map(|(_, x)| *x)
         .next()
 }
 
-fn part_2(numbers: &[usize], target: usize) -> Option<usize> {
+fn part_2(numbers: &[i64], target: i64) -> Option<i64> {
     assert!(numbers.len() >= 1);
     assert!(numbers[0] < target);
 
@@ -51,8 +54,8 @@ fn part_2(numbers: &[usize], target: usize) -> Option<usize> {
         }
     }
     
-    assert!(end - start >= 1);
-    assert!(numbers[start..=end].iter().sum::<usize>() == target);
+    debug_assert!(end - start >= 1);
+    debug_assert!(numbers[start..=end].iter().sum::<i64>() == target);
     
     let min = *numbers[start..=end].iter().min().unwrap();
     let max = *numbers[start..=end].iter().max().unwrap();
@@ -60,14 +63,30 @@ fn part_2(numbers: &[usize], target: usize) -> Option<usize> {
 }
 
 fn main() {
+    let sw = Instant::now();
     let input = include_str!("../input.txt")
         .lines()
         .map(str::parse)
-        .collect::<Result<Vec<usize>, _>>()
-        .expect("A valid input");
+        .collect::<Result<Vec<i64>, _>>()
+        .expect("Expected valid input");
+    let parse_input_time = sw.elapsed();
 
-    let part_1 = dbg!(part_1(&input, 25)).unwrap();
-    dbg!(part_2(&input, part_1));
+    let sw = Instant::now();
+    let part_1 = part_1(&input, 25).unwrap();
+    let part_1_time = sw.elapsed();
+    let sw = Instant::now();
+    let part_2 = part_2(&input, part_1).unwrap();
+    let part_2_time = sw.elapsed();
+
+    let sw = Instant::now();
+    println!("part_1 = {}", part_1);
+    println!("part_2 = {}", part_2);
+    let print_answers_time = sw.elapsed();
+
+    dbg!(parse_input_time);
+    dbg!(part_1_time);
+    dbg!(part_2_time);
+    dbg!(print_answers_time);
 }
 
 
@@ -75,17 +94,17 @@ fn main() {
 mod tests {
     use super::*;
     
-    fn example_input() -> &'static [usize] {
+    fn example_input() -> &'static [i64] {
         &[
             35, 20, 15, 25, 47, 40, 62, 55, 65, 95, 102, 117, 150, 182, 127, 219, 299, 277, 309, 576,
         ]
     }
     
-    fn real_input() -> Vec<usize> {
+    fn real_input() -> Vec<i64> {
         include_str!("../input.txt")
             .lines()
             .map(str::parse)
-            .collect::<Result<Vec<usize>, _>>()
+            .collect::<Result<Vec<i64>, _>>()
             .expect("A valid input")
     }
 
