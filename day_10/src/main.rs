@@ -14,14 +14,6 @@ fn real_input() -> Vec<i64> {
     input
 }
 
-fn example_input() -> Vec<i64> {
-    let mut input = vec![16, 10, 15, 5, 1, 11, 7, 19, 6, 12, 4];
-    input.push(0);
-    input.sort();
-    input.push(input.last().unwrap() + 3);
-    input
-}
-
 fn part_1(input: &[i64]) -> i64 {
     let mut one_count = 0;
     let mut three_count = 0;
@@ -73,6 +65,14 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn example_input() -> Vec<i64> {
+        let mut input = vec![16, 10, 15, 5, 1, 11, 7, 19, 6, 12, 4];
+        input.push(0);
+        input.sort();
+        input.push(input.last().unwrap() + 3);
+        input
+    }
 
     #[test]
     fn test_part_1() {
