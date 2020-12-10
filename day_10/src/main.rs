@@ -3,16 +3,23 @@ use std::time::Instant;
 const INPUT: &str = include_str!("../input.txt");
 
 fn real_input() -> Vec<i64> {
-    let mut input = INPUT.lines()
-        .map(str::parse)
-        .collect::<Result<Vec<i64>, _>>()
-        .expect("Expected a valid input");
-
-    // Sort the numbers, and include the socket and phone
+    const MAX_INPUT_SIZE: usize = 100;
+    let mut sorted_staging = [None; MAX_INPUT_SIZE * 3];
+    let mut count = 0;
+    for x in INPUT.lines().map(str::parse::<i64>) {
+        let value = x.expect("Expected a valid input");
+        sorted_staging[value as usize] = Some(value);
+        count += 1;
+    }
+    
+    assert!(count <= MAX_INPUT_SIZE);
+    let mut input = Vec::with_capacity(count + 2);
     input.push(0);
-    input.sort();
+    for x in sorted_staging.iter().filter_map(|x| *x) {
+        input.push(x);
+    }
     input.push(input.last().unwrap() + 3);
-        
+    
     input
 }
 
