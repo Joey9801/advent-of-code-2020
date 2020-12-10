@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 const INPUT: &str = include_str!("../input.txt");
 
 fn real_input() -> Vec<i64> {
@@ -15,51 +17,60 @@ fn real_input() -> Vec<i64> {
 }
 
 fn part_1(input: &[i64]) -> i64 {
-    let mut one_count = 0;
-    let mut three_count = 0;
-    input.iter()
-        .zip(input.iter().skip(1))
-        .for_each(|(a, b)| {
-            match b - a {
-                0 => panic!("Two equal numbers!"),
-                1 => one_count += 1,
-                3 => three_count += 1,
-                x if x > 3 => panic!("Gap of more than three"),
-                _ => (),
-            }
-        });
+    let mut counts = [0i64; 4];
+    input.windows(2)
+        .map(|w| w[1] - w[0])
+        .for_each(|x| counts[x as usize] += 1 );
     
-    one_count * three_count
+    assert!(counts[0] == 0);
+
+    counts[1] * counts[3]
 }
 
 fn part_2(input: &[i64]) -> i64 {
-    const DYN_SIZE: usize = 3;
-    // There are no repeats in the inputs, so only ever have to look three forward to see all
-    // possible paths
-    let mut counts = [0; DYN_SIZE];
-    
-    // There is one way to get to the end from the end
-    counts[(input.len() - 1) % DYN_SIZE] = 1;
+    const MAX_GAP: usize = 3;
 
-    for i in (0..(input.len() - 1)).rev() {
-        let value = input[i];
-        let max_i = std::cmp::min(i + DYN_SIZE + 1, input.len());
-        let mut count = 0i64;
-        for j in (i + 1)..max_i {
-            if input[j] - value <= 3 {
-                count += counts[j % DYN_SIZE];
-            }
-        }
-        counts[i % DYN_SIZE] = count;
+    // For each element, for each of the precending elements that are within
+    // MAX_GAP of this element, sum the number of ways that that preceding
+    // element can be reached from the first element.
+    // Since there are no repeats in the input, only the last MAX_GAP elements
+    // can possibly be close enough => store the number of ways that element i
+    // can be reached from the first element in counts[i % MAX_GAP].
+    let mut counts = [0; MAX_GAP];
+    
+    // Initial condition - There is one way to get to first element from the
+    // first element.
+    counts[0] = 1;
+
+    for i in 1..input.len() {
+        let min_j = if i < MAX_GAP { 0 } else { i - MAX_GAP };
+        counts[i % MAX_GAP] = (min_j..i)
+            .filter(|&j| input[i] - input[j] <= 3)
+            .map(|j| counts[j % MAX_GAP])
+            .sum();
     }
 
-    counts[0]
+    counts[(input.len() - 1) % MAX_GAP]
 }
 
 fn main() {
+    let sw = Instant::now();
     let input = real_input();
-    dbg!(part_1(&input));
-    dbg!(part_2(&input));
+    let load_input_time = sw.elapsed();
+    
+    let sw = Instant::now();
+    let part_1_ans = part_1(&input);
+    let part_1_time = sw.elapsed();
+
+    let sw = Instant::now();
+    let part_2_ans = part_2(&input);
+    let part_2_time = sw.elapsed();
+    
+    dbg!(part_1_ans);
+    dbg!(part_2_ans);
+    dbg!(load_input_time);
+    dbg!(part_1_time);
+    dbg!(part_2_time);
 }
 
 #[cfg(test)]
