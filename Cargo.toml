@@ -1,5 +1,4 @@
 [workspace]
-
 members = [
     "util",
     "day_1",
@@ -12,4 +11,9 @@ members = [
     "day_8",
     "day_9",
     "day_10",
+    "day_11",
 ]
+
+[profile.test.package.day_11]
+# The real input take a couple of seconds in debug mode, and a couple of milliseconds in release mode
+opt-level = 3
