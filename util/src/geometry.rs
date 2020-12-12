@@ -1,5 +1,6 @@
 use crate::vec2::Vec2;
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Rotation {
     Clockwise,
     CounterClockwise,
@@ -15,7 +16,7 @@ pub enum CardDir {
 }
 
 impl CardDir {
-    pub fn turn(&self, rot: Rotation) -> Self {
+    pub fn turn(&self, rot: Rotation, count: i32) -> Self {
         let dirnum: i32 = match &self {
             CardDir::Up => 0,
             CardDir::Left => 1,
@@ -23,9 +24,9 @@ impl CardDir {
             CardDir::Right => 3,
         };
         let rotnum: i32 = match rot {
-            Rotation::Clockwise => 1,
-            Rotation::CounterClockwise => -1,
-        };
+            Rotation::Clockwise => -1,
+            Rotation::CounterClockwise => 1,
+        } * count;
 
         match (dirnum + rotnum).rem_euclid(4) {
             0 => CardDir::Up,
