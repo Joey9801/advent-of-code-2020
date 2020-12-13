@@ -13,12 +13,16 @@ pub trait Integer : Sized
     + std::cmp::Eq
 {
     fn zero() -> Self;
+    fn one() -> Self;
 }
 
 macro_rules! impl_integer {
     ($t:ty) => { impl Integer for $t {
         fn zero() -> Self {
             0
+        }
+        fn one() -> Self {
+            1
         }
     } };
     ($first:ty, $($rest:ty),+) => {
@@ -27,7 +31,7 @@ macro_rules! impl_integer {
     };
 }
 
-impl_integer!(u8, u16, u32, u64, usize,i8, i16, i32, i64, isize);
+impl_integer!(u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize);
 
 
 macro_rules! impl_marker_trait {
@@ -41,5 +45,5 @@ macro_rules! impl_marker_trait {
 pub trait SignedInteger : Integer { }
 pub trait UnsignedInteger : Integer { }
 
-impl_marker_trait!(SignedInteger, i8, i16, i32, i64, isize);
-impl_marker_trait!(UnsignedInteger, u8, u16, u32, u64, usize);
+impl_marker_trait!(SignedInteger, i8, i16, i32, i64, i128, isize);
+impl_marker_trait!(UnsignedInteger, u8, u16, u32, u64, u128, usize);
