@@ -53,7 +53,7 @@ fn part_1(input: &Input) -> u64 {
     min_bus * (min_bus - (input.arrival_time % min_bus))
 }
 
-fn part_2(input: &Input) -> u128 {
+fn part_2(input: &Input) -> u64 {
     // If bus i is in service with a 'bus_time' of ni, it adds the following constraint to the
     // solution, x:
     //     x (mod ni) = -i (mod ni)
@@ -67,31 +67,31 @@ fn part_2(input: &Input) -> u128 {
     // Satisfies constraint i:
     //    for j != i, yj (mod ni) = 0
     //    => sum(a * y * z) (mod ni) = ai * yi * zi (mod ni)
-    //                                  = ai (mod ni)
+    //                               = ai (mod ni)
 
-    let prod: u128 = input.busses.iter().filter_map(|&bus| match bus {
+    let prod: u64 = input.busses.iter().filter_map(|&bus| match bus {
         Bus::OutOfService => None,
-        Bus::InService(time) => Some(time as u128),
+        Bus::InService(time) => Some(time as u64),
     }).product();
     
-    let sum: u128 = input.busses
+    let sum: u64 = input.busses
         .iter()
         .enumerate()
         .filter_map(|(id, &bus)| match bus {
             Bus::OutOfService => None,
             Bus::InService(bus_time) => {
-                let a = (-(id as i64)).rem_euclid(bus_time as i64) as u128;
-                let n = bus_time as u128;
+                let a = (-(id as i64)).rem_euclid(bus_time as i64) as u64;
+                let n = bus_time as u64;
                 Some((a, n))
             }
         })
         .map(|(a, n)| {
             let y = prod / n;
-            let z = modinverse(y as i128, n as i128).unwrap() as u128;
-            a * y * z
+            let z = modinverse(y as i64, n as i64).unwrap() as u64;
+            (a * y * z) % prod
         }).sum();
     
-    sum  % prod
+    sum % prod
 }
 
 fn main() {
