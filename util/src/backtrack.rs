@@ -1,17 +1,10 @@
-struct BtStackElement<S: BacktrackState + ?Sized> {
-    index: S::Index,
-    values: S::ValueIter,
-}
-
 pub enum BacktrackResult {
-    Success {
-        iter_count: usize
-    },
+    Success { iter_count: usize },
     Failure,
 }
 
 impl BacktrackResult {
-    fn is_success(&self) -> bool {
+    pub fn is_success(&self) -> bool {
         match self {
             BacktrackResult::Success { .. } => true,
             BacktrackResult::Failure => false,
@@ -25,12 +18,23 @@ pub trait BacktrackState {
     type ValueIter: Iterator<Item=Self::Value>;
     
     fn is_solved(&self) -> bool;
+    
+    /// Set or clear the value at the given index
     fn set(&mut self, index: Self::Index, value: Option<Self::Value>);
+    
+    /// The next index to try filling in, if there is one.
     fn next_index(&self) -> Option<Self::Index>;
+    
+    /// An iterator over the posisble values at a given unfilled index
     fn possible_values(&self, index: Self::Index) -> Self::ValueIter;
     
+    /// Attempt to solve this problem in place.
+    /// 
+    /// Will call set() for indices returned by possible_values() during the backtracking
+    /// iterations. In the event of an unsolvable problem, each index touched will be reset by
+    /// passing None to set() before returning.
     fn backtrack_solve(&mut self) -> BacktrackResult {
-        let mut stack: Vec<BtStackElement<Self>> = Vec::new();
+        let mut stack: Vec<(Self::Index, Self::ValueIter)> = Vec::new();
         let mut iter_count = 0;
 
         loop {
@@ -47,10 +51,10 @@ pub trait BacktrackState {
             
             // 2. Attempt to add a new index to the stack
             match self.next_index() {
+                // Fall through to 3 -> to apply first value of the iterator to current_state
                 Some(index) => {
                     let values = self.possible_values(index);
-                    stack.push(BtStackElement { index, values });
-                    // Fall through to 3 -> will end up applying the first value of the iterator to current_state
+                    stack.push((index, values));
                 },
                 None => (),
             }
@@ -59,7 +63,7 @@ pub trait BacktrackState {
             while stack.len() > 0 {
                 let (head_index, next_head_value) = {
                     let head = stack.last_mut().unwrap();
-                    (head.index, head.values.next())
+                    (head.0, head.1.next())
                 };
                 
                 self.set(head_index, next_head_value);
@@ -120,12 +124,16 @@ mod sudoku_test {
         fn set(&mut self, (x, y): Self::Index, value: Option<Self::Value>) {
             let offset = (x + y * 9) as usize;
             match value {
-                Some(value) => self.numbers[offset] = value,
+                Some(value) => {
+                    assert!(value >= 1 && value <= 9);
+                    self.numbers[offset] = value;
+                }
                 None => self.numbers[offset] = 0,
             }
         }
         
         fn next_index(&self) -> Option<Self::Index> {
+            // Just the first unfilled value in storage order
             let offset = self.numbers
                 .iter()
                 .enumerate()
@@ -138,11 +146,14 @@ mod sudoku_test {
             
             Some((x, y))
         }
-        
-        fn possible_values(&self, (x, y): (u8, u8)) -> Self::ValueIter {
-            let mut possible = [true; 9];
+
+        fn possible_values(&self, (x, y): Self::Index) -> Self::ValueIter {
             // Top left of the subsquare
             let tl = ((x / 3) * 3, (y / 3) * 3);
+
+            // Super noddy method that recomputes the possible values every time possible_values()
+            // is called
+            let mut possible = [true; 9];
             for (x, y) in 
                 (0..9).zip(iter::repeat(y)) // All elements in the row
                     .chain(iter::repeat(x).zip(0..9)) // All elements in the column
